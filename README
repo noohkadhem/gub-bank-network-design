@@ -1,0 +1,50 @@
+# Gulf United Bank — Multi-Branch Network Design
+
+A network design and implementation project built in Cisco Packet Tracer, simulating a secure, scalable network infrastructure for a fictional bank (Gulf United Bank) expanding across three branches in Bahrain: Manama, Riffa, and Muharraq.
+
+**This was a 4-person team project** completed as part of a Networking and Data Communications course. My primary contribution was **NAT/PAT implementation** — see below for details. The rest of the design (VLAN/IP addressing, OSPF routing, security and redundancy measures) was a collaborative team effort.
+
+## Scenario
+
+Gulf United Bank is expanding to a central Manama headquarters with branches in Riffa and Muharraq. The design goals were scalability, redundancy, availability, and security across all three sites.
+
+## Architecture Overview
+
+- **IP Addressing:** Private IPv4 addressing (VLSM) sized per branch based on projected 5-year headcount growth, with a dedicated subnet per department (Management, Administration, Marketing, HR, Finance, IT, Loan Services, Legal) at each branch.
+- **VLAN Segmentation:** Each department has its own VLAN across all branches, reducing broadcast traffic — demonstrated in testing to significantly cut unnecessary packet flooding compared to a flat network.
+- **Routing:** OSPF was chosen for its support of VLSM, fast convergence, and scalability for a growing multi-site network.
+- **Redundancy:** HSRP (Hot Standby Router Protocol) for gateway failover, EtherChannel for link aggregation and load balancing, and Spanning Tree Protocol (STP) to prevent switching loops.
+- **WAN Connectivity:** PPP with CHAP authentication between branch routers and the ISP, plus PPPoE for specific department-level dial-up-style connections.
+- **Wireless Security:** WPA2 with AES encryption for the Manama branch's wireless network.
+
+## My Contribution: NAT/PAT Implementation
+
+I implemented Network Address Translation across the topology using two approaches:
+
+**Static NAT** — for the bank's two public-facing servers (web and email), assigning fixed public IP addresses so external users could reach them from any branch:
+```
+ip nat inside source static 172.16.2.26 193.200.35.3
+ip nat inside source static 172.16.2.27 193.200.35.4
+```
+
+**PAT (Port Address Translation)** — for general internet access from internal devices, using an address pool and an access list to control which subnets could get outbound access (deliberately excluding Finance and HR departments per the bank's security requirements):
+```
+ip nat pool PAT 193.200.35.5 193.200.35.6 netmask 255.255.255.248
+ip nat inside source list PAT pool PAT overload
+```
+The access list explicitly permits each department's subnet needing internet access, with the ACL implicitly denying everything else by default — meaning Finance and HR devices have no outbound internet path, in line with the bank's internal security policy.
+
+## Other Security Measures (Team Contribution)
+
+- Layered ACLs restricting SSH device management to IT staff only, blocking ICMP to public-facing servers, and restricting general internet access by department
+- Port security on access-layer switches to prevent MAC address spoofing and flooding
+- CHAP authentication on PPP links between branch routers and the ISP
+
+## Files
+
+- `PRACTICAL.pkt` — the Cisco Packet Tracer project file (open with Packet Tracer to explore the full topology and configs)
+- `GUB_Network_Report.pdf` — the full written report covering IP addressing, routing protocol selection, security/redundancy design, wireless, PPP/PPPoE, and NAT/ACL implementation
+
+## Author's Note
+
+I'm including this project because it demonstrates my ability to work with routing protocols, address translation, and access control in a team engineering context — skills directly relevant to network security and infrastructure roles. Team member names have been omitted from the shared report for privacy; the full team is credited in the original coursework submission.
